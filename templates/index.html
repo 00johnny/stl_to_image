@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patent Drawing Converter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f4f5;
+      color: #18181b;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e4e4e7;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+    header span { font-size: 0.8rem; color: #71717a; background: #f4f4f5;
+                  border: 1px solid #e4e4e7; padding: 2px 8px; border-radius: 99px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 0;
+      height: calc(100vh - 57px);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: #fff;
+      border-right: 1px solid #e4e4e7;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #71717a;
+      margin-bottom: 10px;
+    }
+
+    /* Drop zone */
+    #drop-zone {
+      border: 2px dashed #d4d4d8;
+      border-radius: 10px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    #drop-zone.dragover { border-color: #2563eb; background: #eff6ff; }
+    #drop-zone.has-file { border-color: #16a34a; background: #f0fdf4; }
+    #drop-zone svg { display: block; margin: 0 auto 10px; opacity: 0.4; }
+    #drop-zone p { font-size: 0.85rem; color: #52525b; }
+    #drop-zone strong { color: #18181b; }
+    #file-name { font-size: 0.75rem; color: #16a34a; margin-top: 6px;
+                 font-weight: 500; word-break: break-all; }
+    #file-input { display: none; }
+
+    /* Param groups */
+    .param-group { display: flex; flex-direction: column; gap: 12px; }
+
+    .param-row label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: #3f3f46;
+      margin-bottom: 4px;
+    }
+    .param-row label span { font-weight: 600; color: #2563eb; min-width: 40px; text-align: right; }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+
+    select {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid #d4d4d8;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: #3f3f46;
+    }
+    .toggle-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb; }
+
+    input[type=text] {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid #d4d4d8;
+      border-radius: 6px;
+      font-size: 0.82rem;
+    }
+
+    /* Generate button */
+    #generate-btn {
+      width: 100%;
+      padding: 11px;
+      background: #2563eb;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    #generate-btn:hover { background: #1d4ed8; }
+    #generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Preview area ── */
+    .preview-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      position: relative;
+      gap: 16px;
+    }
+
+    #preview-container {
+      background: #fff;
+      border: 1px solid #e4e4e7;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: hidden;
+      max-width: 100%;
+      max-height: calc(100vh - 160px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 400px;
+      min-height: 400px;
+    }
+
+    #preview-img {
+      max-width: 100%;
+      max-height: calc(100vh - 160px);
+      display: none;
+    }
+
+    #placeholder {
+      text-align: center;
+      color: #a1a1aa;
+    }
+    #placeholder svg { display: block; margin: 0 auto 12px; opacity: 0.3; }
+    #placeholder p { font-size: 0.9rem; }
+
+    #spinner {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: #71717a;
+      font-size: 0.85rem;
+    }
+    .spin {
+      width: 32px; height: 32px;
+      border: 3px solid #e4e4e7;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #error-msg {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    #download-btn {
+      display: none;
+      padding: 8px 20px;
+      background: #fff;
+      border: 1px solid #d4d4d8;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-decoration: none;
+      color: #18181b;
+    }
+    #download-btn:hover { background: #f4f4f5; }
+
+    hr { border: none; border-top: 1px solid #e4e4e7; }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
+      .sidebar { border-right: none; border-bottom: 1px solid #e4e4e7; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Patent Drawing Converter</h1>
+  <span>STL → USPTO-style drawing</span>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+
+    <!-- Upload -->
+    <div>
+      <div class="section-title">1. Upload STL File</div>
+      <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        <p><strong>Click or drag</strong> an STL file here</p>
+        <div id="file-name"></div>
+      </div>
+      <input type="file" id="file-input" accept=".stl" />
+    </div>
+
+    <hr />
+
+    <!-- View controls -->
+    <div>
+      <div class="section-title">2. View Angle</div>
+      <div class="param-group">
+        <div class="param-row">
+          <label>Azimuth (horizontal) <span id="val-view_azimuth">45°</span></label>
+          <input type="range" id="view_azimuth" min="0" max="359" step="1" value="45" />
+        </div>
+        <div class="param-row">
+          <label>Elevation (vertical) <span id="val-view_elevation">30°</span></label>
+          <input type="range" id="view_elevation" min="-90" max="90" step="1" value="30" />
+        </div>
+        <div class="param-row">
+          <label>Projection</label>
+          <select id="projection">
+            <option value="perspective" selected>Perspective</option>
+            <option value="isometric">Isometric</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <label>Field of View <span id="val-fov_deg">35°</span></label>
+          <input type="range" id="fov_deg" min="10" max="90" step="1" value="35" />
+        </div>
+      </div>
+    </div>
+
+    <hr />
+
+    <!-- Light controls -->
+    <div>
+      <div class="section-title">3. Light Direction</div>
+      <div class="param-group">
+        <div class="param-row">
+          <label>Azimuth <span id="val-light_azimuth">135°</span></label>
+          <input type="range" id="light_azimuth" min="0" max="359" step="1" value="135" />
+        </div>
+        <div class="param-row">
+          <label>Elevation <span id="val-light_elevation">45°</span></label>
+          <input type="range" id="light_elevation" min="0" max="90" step="1" value="45" />
+        </div>
+      </div>
+    </div>
+
+    <hr />
+
+    <!-- Hatching controls -->
+    <div>
+      <div class="section-title">4. Cross-Hatch Shading</div>
+      <div class="param-group">
+        <div class="param-row">
+          <label>Hatch Angle <span id="val-hatch_angle">45°</span></label>
+          <input type="range" id="hatch_angle" min="0" max="89" step="1" value="45" />
+        </div>
+        <div class="param-row">
+          <label>Dense spacing (dark) <span id="val-hatch_spacing_dense">3pt</span></label>
+          <input type="range" id="hatch_spacing_dense" min="1" max="10" step="0.5" value="3" />
+        </div>
+        <div class="param-row">
+          <label>Sparse spacing (light) <span id="val-hatch_spacing_sparse">14pt</span></label>
+          <input type="range" id="hatch_spacing_sparse" min="5" max="30" step="0.5" value="14" />
+        </div>
+        <div class="param-row">
+          <label>No-hatch threshold <span id="val-hatch_threshold">0.15</span></label>
+          <input type="range" id="hatch_threshold" min="0" max="0.9" step="0.05" value="0.15" />
+        </div>
+      </div>
+    </div>
+
+    <hr />
+
+    <!-- Line weight controls -->
+    <div>
+      <div class="section-title">5. Line Weights</div>
+      <div class="param-group">
+        <div class="param-row">
+          <label>Outline (silhouette) <span id="val-line_width_outline">2.0pt</span></label>
+          <input type="range" id="line_width_outline" min="0.5" max="5" step="0.25" value="2" />
+        </div>
+        <div class="param-row">
+          <label>Detail (crease edges) <span id="val-line_width_detail">0.6pt</span></label>
+          <input type="range" id="line_width_detail" min="0.25" max="3" step="0.25" value="0.6" />
+        </div>
+        <div class="param-row">
+          <label>Crease angle threshold <span id="val-crease_angle_deg">30°</span></label>
+          <input type="range" id="crease_angle_deg" min="5" max="80" step="5" value="30" />
+        </div>
+      </div>
+    </div>
+
+    <hr />
+
+    <!-- Output controls -->
+    <div>
+      <div class="section-title">6. Output</div>
+      <div class="param-group">
+        <div class="param-row">
+          <label>DPI <span id="val-output_dpi">300</span></label>
+          <input type="range" id="output_dpi" min="72" max="600" step="1" value="300" />
+        </div>
+        <div class="toggle-row">
+          <label>Figure label</label>
+          <input type="checkbox" id="show_figure_label" checked />
+        </div>
+        <div class="param-row">
+          <label>Label text</label>
+          <input type="text" id="figure_label" value="FIG. 1" />
+        </div>
+      </div>
+    </div>
+
+    <hr />
+
+    <button id="generate-btn" disabled>Generate Drawing</button>
+
+  </aside>
+
+  <!-- ── Preview ── -->
+  <main class="preview-area">
+    <div id="preview-container">
+      <div id="placeholder">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+        <p>Upload an STL file and click<br><strong>Generate Drawing</strong></p>
+      </div>
+      <div id="spinner">
+        <div class="spin"></div>
+        <span>Generating patent drawing...</span>
+      </div>
+      <img id="preview-img" alt="Generated patent drawing" />
+    </div>
+    <div id="error-msg"></div>
+    <a id="download-btn" href="#" download="patent_drawing.png">Download PNG</a>
+  </main>
+
+</div>
+
+<script>
+  // ── Slider value display ──────────────────────────────────────────────────
+  const sliderUnits = {
+    view_azimuth: '°', view_elevation: '°', fov_deg: '°',
+    light_azimuth: '°', light_elevation: '°',
+    hatch_angle: '°',
+    hatch_spacing_dense: 'pt', hatch_spacing_sparse: 'pt',
+    hatch_threshold: '',
+    line_width_outline: 'pt', line_width_detail: 'pt',
+    crease_angle_deg: '°',
+    output_dpi: '',
+  };
+
+  document.querySelectorAll('input[type=range]').forEach(slider => {
+    const display = document.getElementById('val-' + slider.id);
+    if (!display) return;
+    const unit = sliderUnits[slider.id] ?? '';
+    slider.addEventListener('input', () => {
+      display.textContent = slider.value + unit;
+    });
+  });
+
+  // ── File upload ───────────────────────────────────────────────────────────
+  let selectedFile = null;
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const fileNameEl = document.getElementById('file-name');
+  const generateBtn = document.getElementById('generate-btn');
+
+  function setFile(file) {
+    if (!file || !file.name.toLowerCase().endsWith('.stl')) {
+      alert('Please select a .stl file.');
+      return;
+    }
+    selectedFile = file;
+    fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+    dropZone.classList.add('has-file');
+    generateBtn.disabled = false;
+  }
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+
+  // ── Collect params ────────────────────────────────────────────────────────
+  function collectParams() {
+    const sliderIds = [
+      'view_azimuth','view_elevation','fov_deg',
+      'light_azimuth','light_elevation',
+      'hatch_angle','hatch_spacing_dense','hatch_spacing_sparse','hatch_threshold',
+      'line_width_outline','line_width_detail','crease_angle_deg',
+      'output_dpi',
+    ];
+    const params = {};
+    sliderIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) params[id] = parseFloat(el.value);
+    });
+    params.projection = document.getElementById('projection').value;
+    params.show_figure_label = document.getElementById('show_figure_label').checked;
+    params.figure_label = document.getElementById('figure_label').value.trim() || 'FIG. 1';
+    return params;
+  }
+
+  // ── Generate ──────────────────────────────────────────────────────────────
+  const previewImg = document.getElementById('preview-img');
+  const placeholder = document.getElementById('placeholder');
+  const spinner = document.getElementById('spinner');
+  const errorMsg = document.getElementById('error-msg');
+  const downloadBtn = document.getElementById('download-btn');
+
+  generateBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    // Show spinner
+    placeholder.style.display = 'none';
+    previewImg.style.display = 'none';
+    spinner.style.display = 'flex';
+    errorMsg.style.display = 'none';
+    downloadBtn.style.display = 'none';
+    generateBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('stl_file', selectedFile);
+    formData.append('params', JSON.stringify(collectParams()));
+
+    try {
+      const resp = await fetch('/api/generate', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: resp.statusText }));
+        throw new Error(err.error || 'Server error');
+      }
+
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+
+      previewImg.src = url;
+      previewImg.style.display = 'block';
+      spinner.style.display = 'none';
+
+      downloadBtn.href = url;
+      downloadBtn.download = 'patent_drawing.png';
+      downloadBtn.style.display = 'inline-block';
+
+    } catch (err) {
+      spinner.style.display = 'none';
+      placeholder.style.display = 'block';
+      errorMsg.textContent = 'Error: ' + err.message;
+      errorMsg.style.display = 'block';
+    } finally {
+      generateBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
