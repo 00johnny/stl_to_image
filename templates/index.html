@@ -201,8 +201,8 @@
       text-align: center;
     }
 
-    #download-btn {
-      display: none;
+    .dl-btn {
+      display: inline-block;
       padding: 8px 20px;
       background: #fff;
       border: 1px solid #d4d4d8;
@@ -214,7 +214,7 @@
       text-decoration: none;
       color: #18181b;
     }
-    #download-btn:hover { background: #f4f4f5; }
+    .dl-btn:hover { background: #f4f4f5; }
 
     hr { border: none; border-top: 1px solid #e4e4e7; }
 
@@ -253,21 +253,39 @@
 
     <!-- View controls -->
     <div>
-      <div class="section-title">2. View Angle</div>
+      <div class="section-title">2. Views</div>
       <div class="param-group">
         <div class="param-row">
-          <label>Azimuth (horizontal) <span id="val-view_azimuth">45°</span></label>
+          <label>View set</label>
+          <select id="view_mode">
+            <option value="standard" selected>Standard 7 views (design patent)</option>
+            <option value="single">Single view</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <label>Model "up" axis</label>
+          <select id="up_axis">
+            <option value="z" selected>Z up</option>
+            <option value="y">Y up</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <label>Turn model (choose the front) <span id="val-model_rotation_deg">0°</span></label>
+          <input type="range" id="model_rotation_deg" min="0" max="270" step="90" value="0" />
+        </div>
+        <div class="param-row">
+          <label>Perspective view: azimuth <span id="val-view_azimuth">45°</span></label>
           <input type="range" id="view_azimuth" min="0" max="359" step="1" value="45" />
         </div>
         <div class="param-row">
-          <label>Elevation (vertical) <span id="val-view_elevation">30°</span></label>
+          <label>Perspective view: elevation <span id="val-view_elevation">30°</span></label>
           <input type="range" id="view_elevation" min="-90" max="90" step="1" value="30" />
         </div>
         <div class="param-row">
           <label>Projection</label>
           <select id="projection">
-            <option value="perspective" selected>Perspective</option>
-            <option value="isometric">Isometric</option>
+            <option value="orthographic" selected>Orthographic (recommended)</option>
+            <option value="perspective">Perspective (single view only)</option>
           </select>
         </div>
         <div class="param-row">
@@ -298,23 +316,23 @@
 
     <!-- Hatching controls -->
     <div>
-      <div class="section-title">4. Cross-Hatch Shading</div>
+      <div class="section-title">4. Surface Shading</div>
       <div class="param-group">
         <div class="param-row">
-          <label>Hatch Angle <span id="val-hatch_angle">45°</span></label>
-          <input type="range" id="hatch_angle" min="0" max="89" step="1" value="45" />
+          <label>Style</label>
+          <select id="shading">
+            <option value="none" selected>None (clean line drawing)</option>
+            <option value="hatch">Line shading</option>
+            <option value="stipple">Stippling</option>
+          </select>
         </div>
         <div class="param-row">
-          <label>Dense spacing (dark) <span id="val-hatch_spacing_dense">3pt</span></label>
-          <input type="range" id="hatch_spacing_dense" min="1" max="10" step="0.5" value="3" />
+          <label>Line angle <span id="val-hatch_angle">45°</span></label>
+          <input type="range" id="hatch_angle" min="0" max="179" step="1" value="45" />
         </div>
         <div class="param-row">
-          <label>Sparse spacing (light) <span id="val-hatch_spacing_sparse">14pt</span></label>
-          <input type="range" id="hatch_spacing_sparse" min="5" max="30" step="0.5" value="14" />
-        </div>
-        <div class="param-row">
-          <label>No-hatch threshold <span id="val-hatch_threshold">0.15</span></label>
-          <input type="range" id="hatch_threshold" min="0" max="0.9" step="0.05" value="0.15" />
+          <label>Spacing <span id="val-hatch_spacing">5pt</span></label>
+          <input type="range" id="hatch_spacing" min="2" max="14" step="0.5" value="5" />
         </div>
       </div>
     </div>
@@ -326,16 +344,16 @@
       <div class="section-title">5. Line Weights</div>
       <div class="param-group">
         <div class="param-row">
-          <label>Outline (silhouette) <span id="val-line_width_outline">2.0pt</span></label>
-          <input type="range" id="line_width_outline" min="0.5" max="5" step="0.25" value="2" />
+          <label>Outline (silhouette) <span id="val-line_width_outline">1.2pt</span></label>
+          <input type="range" id="line_width_outline" min="0.3" max="4" step="0.1" value="1.2" />
         </div>
         <div class="param-row">
-          <label>Detail (crease edges) <span id="val-line_width_detail">0.6pt</span></label>
-          <input type="range" id="line_width_detail" min="0.25" max="3" step="0.25" value="0.6" />
+          <label>Detail (crease edges) <span id="val-line_width_detail">0.7pt</span></label>
+          <input type="range" id="line_width_detail" min="0.2" max="3" step="0.1" value="0.7" />
         </div>
         <div class="param-row">
-          <label>Crease angle threshold <span id="val-crease_angle_deg">30°</span></label>
-          <input type="range" id="crease_angle_deg" min="5" max="80" step="5" value="30" />
+          <label>Crease angle threshold <span id="val-crease_angle_deg">25°</span></label>
+          <input type="range" id="crease_angle_deg" min="5" max="80" step="5" value="25" />
         </div>
       </div>
     </div>
@@ -347,7 +365,7 @@
       <div class="section-title">6. Output</div>
       <div class="param-group">
         <div class="param-row">
-          <label>DPI <span id="val-output_dpi">300</span></label>
+          <label>PNG DPI (single view) <span id="val-output_dpi">300</span></label>
           <input type="range" id="output_dpi" min="72" max="600" step="1" value="300" />
         </div>
         <div class="toggle-row">
@@ -383,7 +401,11 @@
       <img id="preview-img" alt="Generated patent drawing" />
     </div>
     <div id="error-msg"></div>
-    <a id="download-btn" href="#" download="patent_drawing.png">Download PNG</a>
+    <div id="download-row" style="display:none; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:14px;">
+      <a class="dl-btn" href="#" data-fmt="pdf">Download PDF sheets</a>
+      <a class="dl-btn" href="#" data-fmt="svg">Download SVG (editable)</a>
+      <a class="dl-btn" href="#" data-fmt="png">Download PNG</a>
+    </div>
   </main>
 
 </div>
@@ -394,8 +416,7 @@
     view_azimuth: '°', view_elevation: '°', fov_deg: '°',
     light_azimuth: '°', light_elevation: '°',
     hatch_angle: '°',
-    hatch_spacing_dense: 'pt', hatch_spacing_sparse: 'pt',
-    hatch_threshold: '',
+    hatch_spacing: 'pt', model_rotation_deg: '°',
     line_width_outline: 'pt', line_width_detail: 'pt',
     crease_angle_deg: '°',
     output_dpi: '',
@@ -445,11 +466,11 @@
   });
 
   // ── Collect params ────────────────────────────────────────────────────────
-  function collectParams() {
+  function collectParams(fmt) {
     const sliderIds = [
       'view_azimuth','view_elevation','fov_deg',
       'light_azimuth','light_elevation',
-      'hatch_angle','hatch_spacing_dense','hatch_spacing_sparse','hatch_threshold',
+      'hatch_angle','hatch_spacing','model_rotation_deg',
       'line_width_outline','line_width_detail','crease_angle_deg',
       'output_dpi',
     ];
@@ -458,9 +479,12 @@
       const el = document.getElementById(id);
       if (el) params[id] = parseFloat(el.value);
     });
-    params.projection = document.getElementById('projection').value;
+    ['projection','view_mode','up_axis','shading'].forEach(id => {
+      params[id] = document.getElementById(id).value;
+    });
     params.show_figure_label = document.getElementById('show_figure_label').checked;
     params.figure_label = document.getElementById('figure_label').value.trim() || 'FIG. 1';
+    params.output_format = fmt || 'png';
     return params;
   }
 
@@ -469,45 +493,35 @@
   const placeholder = document.getElementById('placeholder');
   const spinner = document.getElementById('spinner');
   const errorMsg = document.getElementById('error-msg');
-  const downloadBtn = document.getElementById('download-btn');
+  const downloadRow = document.getElementById('download-row');
+
+  async function requestDrawing(fmt) {
+    const formData = new FormData();
+    formData.append('stl_file', selectedFile);
+    formData.append('params', JSON.stringify(collectParams(fmt)));
+    const resp = await fetch('/api/generate', { method: 'POST', body: formData });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: resp.statusText }));
+      throw new Error(err.error || 'Server error');
+    }
+    const name = (resp.headers.get('X-Filename') || ('patent_drawing.' + fmt));
+    return { blob: await resp.blob(), name };
+  }
 
   generateBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
-
-    // Show spinner
     placeholder.style.display = 'none';
     previewImg.style.display = 'none';
     spinner.style.display = 'flex';
     errorMsg.style.display = 'none';
-    downloadBtn.style.display = 'none';
+    downloadRow.style.display = 'none';
     generateBtn.disabled = true;
-
-    const formData = new FormData();
-    formData.append('stl_file', selectedFile);
-    formData.append('params', JSON.stringify(collectParams()));
-
     try {
-      const resp = await fetch('/api/generate', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: resp.statusText }));
-        throw new Error(err.error || 'Server error');
-      }
-
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-
-      previewImg.src = url;
+      const { blob } = await requestDrawing('png');
+      previewImg.src = URL.createObjectURL(blob);
       previewImg.style.display = 'block';
       spinner.style.display = 'none';
-
-      downloadBtn.href = url;
-      downloadBtn.download = 'patent_drawing.png';
-      downloadBtn.style.display = 'inline-block';
-
+      downloadRow.style.display = 'flex';
     } catch (err) {
       spinner.style.display = 'none';
       placeholder.style.display = 'block';
@@ -516,6 +530,33 @@
     } finally {
       generateBtn.disabled = false;
     }
+  });
+
+  // Each download re-renders in the chosen format (the server caches the mesh).
+  document.querySelectorAll('.dl-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.preventDefault();
+      if (!selectedFile || btn.dataset.busy) return;
+      const label = btn.textContent;
+      btn.dataset.busy = '1';
+      btn.textContent = 'Preparing…';
+      errorMsg.style.display = 'none';
+      try {
+        const { blob, name } = await requestDrawing(btn.dataset.fmt);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        errorMsg.textContent = 'Error: ' + err.message;
+        errorMsg.style.display = 'block';
+      } finally {
+        btn.textContent = label;
+        delete btn.dataset.busy;
+      }
+    });
   });
 </script>
 
